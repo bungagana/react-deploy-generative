@@ -1,9 +1,10 @@
 import React, { useState } from "react";
+import ReactDOMServer from "react-dom/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import './css/chatbot.css';
 
 // API Key (replace with your own key)
-const apiKey = 'AIzaSyClO51g8pLssQ2tS22bo70ZO05m3tA1qPU';
+const apiKey =  'AIzaSyClO51g8pLssQ2tS22bo70ZO05m3tA1qPU';
 
 // Sample data
 const deals = [
@@ -14,8 +15,28 @@ const deals = [
   { dealName: "Deal E", status: "LOST", stage: "PAYMENT", contactName: "Sarah Davis", phone: "083861327174", email: "sarah@example.com" }
 ];
 
-const Modal = ({ isOpen, onClose, children, onRegenerate }) => {
+const Modal = ({ isOpen, onClose, children, onRegenerate, phoneNumber, email, message }) => {
   if (!isOpen) return null;
+
+  const handleWhatsAppClick = () => {
+    if (phoneNumber && message) {
+      const messageHtml = ReactDOMServer.renderToStaticMarkup(<div>{message}</div>);
+      const plainTextMessage = messageHtml.replace(/<\/?[^>]+(>|$)/g, ""); // Remove HTML tags
+      const encodedMessage = encodeURIComponent(plainTextMessage);
+      const url = `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
+      window.open(url, '_blank');
+    }
+  };
+
+  const handleEmailClick = () => {
+    if (email && message) {
+      const messageHtml = ReactDOMServer.renderToStaticMarkup(<div>{message}</div>);
+      const plainTextMessage = messageHtml.replace(/<\/?[^>]+(>|$)/g, ""); // Remove HTML tags
+      const encodedMessage = encodeURIComponent(plainTextMessage);
+      const mailtoUrl = `mailto:${email}?subject=Generated Message&body=${encodedMessage}`;
+      window.open(mailtoUrl, '_blank');
+    }
+  };
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -25,6 +46,16 @@ const Modal = ({ isOpen, onClose, children, onRegenerate }) => {
         {onRegenerate && (
           <button className="regenerate-button" onClick={onRegenerate}>
             Regenerate
+          </button>
+        )}
+        {phoneNumber && (
+          <button className="whatsapp-button" onClick={handleWhatsAppClick}>
+            Send via WhatsApp
+          </button>
+        )}
+        {email && (
+          <button className="email-button" onClick={handleEmailClick}>
+            Send via Email
           </button>
         )}
       </div>
@@ -136,7 +167,7 @@ const SoekarndoBot = () => {
   };
 
   return (
-    <div>
+    <div className="chatbot-container">
       <div className="deals-table">
         <table>
           <thead>
@@ -172,6 +203,9 @@ const SoekarndoBot = () => {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onRegenerate={() => fetchData(selectedDeal)}
+        phoneNumber={selectedDeal ? selectedDeal.phone : null}
+        email={selectedDeal ? selectedDeal.email : null}
+        message={generatedMessage}
       >
         <strong>Generated Message:</strong>
         <div>{generatedMessage}</div>
