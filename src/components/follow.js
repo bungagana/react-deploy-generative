@@ -33,7 +33,6 @@ const Modal = ({ isOpen, onClose, children, onRegenerate }) => {
 };
 
 const SoekarndoBot = () => {
-  const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [selectedDeal, setSelectedDeal] = useState(null);
@@ -107,92 +106,37 @@ const SoekarndoBot = () => {
   };
 
   const parseMessage = (text) => {
-    const parts = text.split(/(\*.*?\*|_.*?_|\~.*?\~)/).map((part, index) => {
-      if (part.startsWith('*') && part.endsWith('*')) {
-        return <span key={index} className="bold">{part.slice(1, -1)}</span>;
-      } else if (part.startsWith('_') && part.endsWith('_')) {
-        return <span key={index} className="italic">{part.slice(1, -1)}</span>;
-      } else if (part.startsWith('~') && part.endsWith('~')) {
-        return <span key={index} className="underline">{part.slice(1, -1)}</span>;
+    const parts = text.split(/(\*.*?\*|_.*?_|\n)/).filter(part => part.trim() !== "");
+    return parts.map((part, index) => {
+      if (part.startsWith("*") && part.endsWith("*")) {
+        return <strong key={index}>{part.slice(1, -1)}</strong>;
+      } else if (part.startsWith("_") && part.endsWith("_")) {
+        return <em key={index}>{part.slice(1, -1)}</em>;
+      } else if (part.startsWith("\n")) {
+        return <br key={index} />;
       } else {
-        return part;
+        return <span key={index}>{part}</span>;
       }
     });
-
-    return <>{parts}</>;
   };
 
-  const handleGenerateMessage = (deal) => {
-    setSelectedDeal(deal);
-    fetchData(deal);
+  const handleInputChange = (event) => {
+    setInput(event.target.value);
   };
 
-  const handleRegenerateMessage = () => {
-    if (selectedDeal) {
-      fetchData(selectedDeal);
-    }
-  };
-
-  const handleSendMessage = () => {
-    if (input.trim() === "") return;
-
-    const userMessage = {
-      role: "user",
-      parts: [{ text: input }],
-    };
-
-    setMessages([...messages, userMessage]);
-
-    // Clear input field after sending the message
+  const handleSubmit = (event) => {
+    event.preventDefault();
+    setMessages([...messages, { text: input, sender: "user" }]);
     setInput("");
   };
 
-  const handleToggleChat = () => {
-    setIsOpen(!isOpen);
+  const handleDealClick = (deal) => {
+    fetchData(deal);
+    setSelectedDeal(deal);
   };
 
   return (
     <div>
-      <div className={`chatbot-container ${isOpen ? "open" : ""}`}>
-        {isOpen && (
-          <div className="chatbot-box">
-            <div className="chatbot-header">
-              <h3>Saka Bot</h3>
-              <button onClick={handleToggleChat} className="close-btn">✕</button>
-            </div>
-            <div className="chatbot-messages">
-              {selectedDeal && (
-                <div className="message bot-message">
-                  <p><strong>Pesan yang Dihasilkan untuk {selectedDeal.dealName}:</strong></p>
-                  <p>{generatedMessage}</p>
-                </div>
-              )}
-              {messages.map((message, index) => (
-                <div key={index} className={`message ${message.role}-message`}>
-                  {message.parts.map((part, partIndex) => (
-                    <span key={partIndex} className={message.role === 'user' ? 'user-message' : 'bot-message'}>
-                      {part.text}
-                    </span>
-                  ))}
-                </div>
-              ))}
-            </div>
-            <div className="chatbot-input">
-              <input
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-                placeholder="Ketik disini"
-              />
-              <button onClick={handleSendMessage}>Send</button>
-            </div>
-          </div>
-        )}
-      </div>
-      <button onClick={handleToggleChat} className="floating-button">
-        <i className="bi bi-chat-dots"></i>
-      </button>
       <div className="deals-table">
         <table>
           <thead>
@@ -203,7 +147,7 @@ const SoekarndoBot = () => {
               <th>Contact Name</th>
               <th>Phone</th>
               <th>Email</th>
-              <th>Actions</th>
+              <th>Action</th>
             </tr>
           </thead>
           <tbody>
@@ -216,21 +160,21 @@ const SoekarndoBot = () => {
                 <td>{deal.phone}</td>
                 <td>{deal.email}</td>
                 <td>
-                  <button onClick={() => handleGenerateMessage(deal)}>Generate Message</button>
+                  <button onClick={() => handleDealClick(deal)}>Generate Message</button>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        onRegenerate={handleRegenerateMessage}
+        onRegenerate={() => fetchData(selectedDeal)}
       >
-        <div>
-          {generatedMessage}
-        </div>
+        <strong>Generated Message:</strong>
+        <div>{generatedMessage}</div>
       </Modal>
     </div>
   );
