@@ -14,7 +14,7 @@ const deals = [
   { dealName: "Deal E", status: "LOST", stage: "PAYMENT", contactName: "Sarah Davis", phone: "083861327174", email: "sarah@example.com" }
 ];
 
-const Modal = ({ isOpen, onClose, children }) => {
+const Modal = ({ isOpen, onClose, children, onRegenerate }) => {
   if (!isOpen) return null;
 
   return (
@@ -22,6 +22,11 @@ const Modal = ({ isOpen, onClose, children }) => {
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
         <button className="modal-close" onClick={onClose}>✕</button>
         <div>{children}</div>
+        {onRegenerate && (
+          <button className="regenerate-button" onClick={onRegenerate}>
+            Regenerate
+          </button>
+        )}
       </div>
     </div>
   );
@@ -122,6 +127,12 @@ const SoekarndoBot = () => {
     fetchData(deal);
   };
 
+  const handleRegenerateMessage = () => {
+    if (selectedDeal) {
+      fetchData(selectedDeal);
+    }
+  };
+
   const handleSendMessage = () => {
     if (input.trim() === "") return;
 
@@ -212,9 +223,14 @@ const SoekarndoBot = () => {
           </tbody>
         </table>
       </div>
-      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
-        <h3>Generated Message</h3>
-        <div>{generatedMessage}</div>
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onRegenerate={handleRegenerateMessage}
+      >
+        <div>
+          {generatedMessage}
+        </div>
       </Modal>
     </div>
   );
